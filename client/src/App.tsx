@@ -58,7 +58,7 @@ function App() {
     maxSize: 0,
     startDate: '',
     endDate: '',
-    uploader: ''
+    uploader: '',
   });
 
   const handleFileUpload = useCallback(async (fileList: FileList) => {

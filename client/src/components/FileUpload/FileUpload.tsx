@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { Upload, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { NotificationList } from '../Notifications/Notification';
 
 interface FileUploadProps {
   onUpload: (files: FileList) => Promise<void>;
@@ -26,27 +27,39 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   const [dragOver, setDragOver] = useState(false);
   const [uploadFiles, setUploadFiles] = useState<UploadFile[]>([]);
 
+  const [notifications, setNotifications] = useState<
+    { id: number; message: string; type?: "success" | "error" | "info" }[]
+  >([]);
+  
+
+  const addNotification = (message: string, type?: "success" | "error" | "info") => {
+    const id = Date.now();
+    setNotifications((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => setNotifications((prev) => prev.filter((n) => n.id !== id)), 4000);
+  };
+
   const validateFiles = (files: FileList): File[] => {
     const validFiles: File[] = [];
-    
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      
+
       // Size validation
       if (file.size > maxSize) {
         console.error(`File ${file.name} exceeds maximum size`);
+        addNotification(`❌ File exceeds maximum size`, "error");
         continue;
       }
-      
+
       validFiles.push(file);
     }
-    
+
     return validFiles;
   };
 
   const handleFiles = useCallback(async (files: FileList) => {
     const validFiles = validateFiles(files);
-    
+
     if (validFiles.length === 0) return;
 
     // Initialize upload tracking
@@ -55,23 +68,23 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       progress: 0,
       status: 'pending'
     }));
-    
+
     setUploadFiles(initialUploadFiles);
 
     try {
       await onUpload(files);
-      
+
       // Update all files to success
-      setUploadFiles(prev => 
+      setUploadFiles(prev =>
         prev.map(uf => ({ ...uf, status: 'success', progress: 100 }))
       );
     } catch (error) {
       // Update all files to error
-      setUploadFiles(prev => 
-        prev.map(uf => ({ 
-          ...uf, 
-          status: 'error', 
-          error: error instanceof Error ? error.message : 'Upload failed' 
+      setUploadFiles(prev =>
+        prev.map(uf => ({
+          ...uf,
+          status: 'error',
+          error: error instanceof Error ? error.message : 'Upload failed'
         }))
       );
     }
@@ -80,7 +93,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
-    
+
     const files = e.dataTransfer.files;
     if (files.length > 0) {
       handleFiles(files);
@@ -111,8 +124,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         onDragLeave={() => setDragOver(false)}
         className={`
           relative border-2 border-dashed rounded-lg p-8 text-center transition-colors
-          ${dragOver 
-            ? 'border-blue-400 bg-gray-800' 
+          ${dragOver
+            ? 'border-blue-400 bg-gray-800'
             : 'border-gray-600 hover:border-gray-500 bg-gray-800'
           }
         `}
@@ -124,7 +137,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           onChange={handleFileInput}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
         />
-        
+
         <div className="flex flex-col items-center space-y-4">
           <Upload className="w-12 h-12 text-gray-500" />
           <div>
@@ -152,7 +165,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
               Clear completed
             </button>
           </div>
-          
+
           <div className="space-y-3">
             {uploadFiles.map((uploadFile, index) => (
               <div key={index} className="flex items-center space-x-3">
@@ -176,18 +189,17 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                       </button>
                     </div>
                   </div>
-                  
+
                   {/* Progress bar */}
                   <div className="w-full bg-gray-700 rounded-full h-2">
                     <div
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        uploadFile.status === 'success' ? 'bg-green-500' :
+                      className={`h-2 rounded-full transition-all duration-300 ${uploadFile.status === 'success' ? 'bg-green-500' :
                         uploadFile.status === 'error' ? 'bg-red-500' : 'bg-blue-500'
-                      }`}
+                        }`}
                       style={{ width: `${uploadFile.progress}%` }}
                     />
                   </div>
-                  
+
                   {uploadFile.error && (
                     <p className="text-xs text-red-500 mt-1">{uploadFile.error}</p>
                   )}
@@ -197,6 +209,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           </div>
         </div>
       )}
+      <NotificationList
+        notifications={notifications}
+        onClose={(id) => setNotifications((prev) => prev.filter((n) => n.id !== id))}
+      />
     </div>
   );
 };

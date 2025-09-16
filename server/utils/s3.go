@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	"io"
+	"log"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -15,18 +16,25 @@ var (
 	bucketName string
 )
 
-func init() {
+// InitAWS initializes the AWS session after env vars are loaded
+func InitAWS() {
 	bucketName = os.Getenv("S3_BUCKET")
 	region := os.Getenv("AWS_REGION")
+
+	if bucketName == "" || region == "" {
+		log.Fatalf("❌ Missing AWS env vars: S3_BUCKET=%s AWS_REGION=%s", bucketName, region)
+	}
 
 	sess = session.Must(session.NewSession(&aws.Config{
 		Region: aws.String(region),
 	}))
+
+	log.Printf("✅ AWS initialized: bucket=%s, region=%s", bucketName, region)
 }
 
-// UploadToS3 uploads file to bucket
+// UploadToS3 uploads a file stream to S3
 func UploadToS3(file io.Reader, key string) error {
-	uploader := s3.New(sess)
+	svc := s3.New(sess)
 
 	buf := new(bytes.Buffer)
 	_, err := io.Copy(buf, file)
@@ -34,7 +42,7 @@ func UploadToS3(file io.Reader, key string) error {
 		return err
 	}
 
-	_, err = uploader.PutObject(&s3.PutObjectInput{
+	_, err = svc.PutObject(&s3.PutObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(key),
 		Body:   bytes.NewReader(buf.Bytes()),
@@ -42,7 +50,7 @@ func UploadToS3(file io.Reader, key string) error {
 	return err
 }
 
-// ListFiles returns all files for a prefix
+// ListFiles lists all objects for a given prefix (e.g. "username/")
 func ListFiles(prefix string) ([]map[string]interface{}, error) {
 	svc := s3.New(sess)
 	resp, err := svc.ListObjectsV2(&s3.ListObjectsV2Input{
@@ -64,7 +72,7 @@ func ListFiles(prefix string) ([]map[string]interface{}, error) {
 	return files, nil
 }
 
-// DownloadFromS3 fetches file by key
+// DownloadFromS3 downloads a file by key
 func DownloadFromS3(key string) (io.ReadCloser, error) {
 	svc := s3.New(sess)
 	resp, err := svc.GetObject(&s3.GetObjectInput{
@@ -77,7 +85,7 @@ func DownloadFromS3(key string) (io.ReadCloser, error) {
 	return resp.Body, nil
 }
 
-// DeleteFromS3 deletes file by key
+// DeleteFromS3 deletes a file by key
 func DeleteFromS3(key string) error {
 	svc := s3.New(sess)
 	_, err := svc.DeleteObject(&s3.DeleteObjectInput{

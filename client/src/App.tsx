@@ -38,7 +38,9 @@ interface FileItem {
   originalUploader?: string;
   duplicateOf?: number;
   savings: number;
+  s3Key: string;
 }
+
 
 interface DeduplicationStats {
   totalFiles: number;
@@ -121,28 +123,27 @@ function App() {
         // Map backend data to FileItem[]
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const loadedFiles: FileItem[] = data.map((f: any, idx: number) => {
-          const rawName = f.key.split("/").pop() || f.key;
-
-          // Remove UUID prefix (everything before last "-" of uuid)
+          const rawName = f.fileName || f.key.split("/").pop() || f.key;
           const parts = rawName.split("-");
-          const cleanName =
-            parts.length > 5 ? parts.slice(5).join("-") : rawName;
+          const cleanName = parts.length > 5 ? parts.slice(5).join("-") : rawName;
 
           return {
-            id: idx,
-            name: cleanName,                        // cleaned filename
+            id: f.id || idx,
+            name: cleanName,
             size: f.size,
-            mimeType: "application/octet-stream",   // backend doesn’t send mimeType
-            uploadDate: f.lastModified,
+            mimeType: f.mimeType || "application/octet-stream",
+            uploadDate: f.uploadDate || f.lastModified,
             uploader: username,
-            downloadCount: 0,
+            downloadCount: f.downloadCount || 0,
             isPublic: false,
-            isDeduplicated: false,                  // dedup can be recalculated later
-            hash: f.key,
-            refCount: 1,
-            savings: 0,
+            isDeduplicated: f.deduped || false,
+            hash: f.hash,
+            refCount: f.refCount || 1,
+            savings: f.savings || 0,
+            s3Key: f.s3Key || f.key,   // ✅ store the actual S3 key
           };
         });
+
 
         setFiles(loadedFiles);
       } catch (error) {
@@ -154,74 +155,6 @@ function App() {
     fetchUserFiles();
   }, [user]);
 
-
-
-  // Mock data for analytics
-  const mockUserStats = [
-    {
-      id: '1',
-      email: 'user1@example.com',
-      filesCount: 45,
-      storageUsed: 2.1 * 1024 * 1024 * 1024, // 2.1GB
-      lastActive: '2024-01-15',
-      uploadsThisMonth: 12,
-      downloadsThisMonth: 8
-    },
-    {
-      id: '2',
-      email: 'user2@example.com',
-      filesCount: 32,
-      storageUsed: 1.8 * 1024 * 1024 * 1024, // 1.8GB
-      lastActive: '2024-01-14',
-      uploadsThisMonth: 8,
-      downloadsThisMonth: 15
-    },
-    {
-      id: '3',
-      email: 'user3@example.com',
-      filesCount: 67,
-      storageUsed: 3.2 * 1024 * 1024 * 1024, // 3.2GB
-      lastActive: '2024-01-13',
-      uploadsThisMonth: 18,
-      downloadsThisMonth: 22
-    }
-  ];
-
-  const mockSystemStats = {
-    totalUsers: 156,
-    totalFiles: 2847,
-    totalStorage: 45.6 * 1024 * 1024 * 1024, // 45.6GB
-    activeUsers: 89,
-    uploadsToday: 23,
-    downloadsToday: 67,
-    deduplicationSavings: 12.3 * 1024 * 1024 * 1024 // 12.3GB
-  };
-
-  const mockUserPersonalStats = {
-    totalFiles: files.length,
-    storageUsed: files.reduce((sum, file) => sum + file.size, 0),
-    uploadsThisMonth: 15,
-    downloadsThisMonth: 8,
-    deduplicationSavings: files.filter(f => f.isDeduplicated).reduce((sum, file) => sum + file.savings, 0)
-  };
-
-  const mockFileTypeDistribution = [
-    { type: 'Images', count: 25, size: 1.2 * 1024 * 1024 * 1024 },
-    { type: 'Documents', count: 18, size: 0.8 * 1024 * 1024 * 1024 },
-    { type: 'Videos', count: 8, size: 2.1 * 1024 * 1024 * 1024 },
-    { type: 'Audio', count: 12, size: 0.5 * 1024 * 1024 * 1024 },
-    { type: 'Other', count: 6, size: 0.3 * 1024 * 1024 * 1024 }
-  ];
-
-  const mockActivityHistory = [
-    { date: '2024-01-01', uploads: 3, downloads: 5 },
-    { date: '2024-01-02', uploads: 7, downloads: 2 },
-    { date: '2024-01-03', uploads: 2, downloads: 8 },
-    { date: '2024-01-04', uploads: 5, downloads: 4 },
-    { date: '2024-01-05', uploads: 8, downloads: 6 },
-    { date: '2024-01-06', uploads: 4, downloads: 9 },
-    { date: '2024-01-07', uploads: 6, downloads: 3 }
-  ];
 
   // Mock deduplication logic
   const calculateFileHash = (file: File): Promise<string> => {
@@ -249,11 +182,15 @@ function App() {
         for (let i = 0; i < fileList.length; i++) {
           const file = fileList[i];
 
-          // 1. Send file to Go backend (uploads to S3)
+          // 1. Send file + user metadata to Go backend (uploads to S3 + RDS)
           const formData = new FormData();
-          formData.append("file", file);
-          formData.append("username", user.primaryEmailAddress?.emailAddress || user.id);
-
+          formData.append("file", file); // ✅ must send the file
+          formData.append("clerk_id", user.id); // Clerk user ID
+          formData.append("email", user.primaryEmailAddress?.emailAddress || "");
+          formData.append(
+            "username",
+            user.primaryEmailAddress?.emailAddress || user.id
+          ); // used for S3 prefix
 
           const res = await fetch("http://localhost:4000/upload", {
             method: "POST",
@@ -288,7 +225,9 @@ function App() {
               originalUploader: existingFile.uploader,
               duplicateOf: existingFile.id,
               savings: file.size,
+              s3Key: existingFile.s3Key,   // ✅ add this
             };
+
 
             // update original file ref count
             setFiles((prev) =>
@@ -303,7 +242,7 @@ function App() {
             // Unique file
             const uniqueFile: FileItem = {
               id: Date.now() + i,
-              name: data.fileName, // backend returns actual stored name
+              name: data.fileName,
               size: data.size,
               mimeType: data.mimeType,
               uploadDate: new Date().toISOString(),
@@ -314,7 +253,9 @@ function App() {
               hash: hash,
               refCount: 1,
               savings: 0,
+              s3Key: data.key,   // ✅ from backend
             };
+
 
             newFiles.push(uniqueFile);
             addNotification(`✅ Uploaded: ${file.name}`, "success");
@@ -324,13 +265,17 @@ function App() {
         setFiles((prev) => [...prev, ...newFiles]);
       } catch (error) {
         console.error("Upload failed:", error);
-        addNotification("❌ An unexpected error occurred while uploading", "error");
+        addNotification(
+          "❌ An unexpected error occurred while uploading",
+          "error"
+        );
       }
 
       setIsLoading(false);
     },
     [files, user]
   );
+
 
 
   const formatFileSize = (bytes: number): string => {
@@ -412,8 +357,8 @@ function App() {
               <button
                 onClick={() => setActiveTab('dashboard')}
                 className={`w-full flex items-center px-3 py-2 rounded-md ${activeTab === 'dashboard'
-                    ? 'bg-blue-500/20 backdrop-blur-md text-white text-lg font-semibold border border-blue-400/30 shadow-lg'
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white text-base font-medium'
+                  ? 'bg-blue-500/20 backdrop-blur-md text-white text-lg font-semibold border border-blue-400/30 shadow-lg'
+                  : 'text-gray-300 hover:bg-gray-700 hover:text-white text-base font-medium'
                   }`}
               >
                 <BarChart3 className="w-5 h-5 mr-3" />
@@ -767,23 +712,14 @@ function App() {
                                   <button
                                     className="text-green-400 hover:text-green-300"
                                     onClick={() => {
-                                      const url = `http://localhost:4000/download?key=${encodeURIComponent(file.hash)}`;
+                                      const url = `http://localhost:4000/download?key=${encodeURIComponent(file.s3Key)}`;
                                       window.open(url, "_blank");
                                       addNotification("✅ Started Download...", "success");
                                     }}
                                   >
                                     <Download className="w-4 h-4" />
                                   </button>
-                                  <button
-                                    className="text-purple-400 hover:text-purple-300"
-                                    onClick={() => {
-                                      const shareLink = `http://localhost:4000/download?key=${encodeURIComponent(file.hash)}`;
-                                      navigator.clipboard.writeText(shareLink);
-                                      addNotification("🔗 Link copied to clipboard!", "info");
-                                    }}
-                                  >
-                                    <Share2 className="w-4 h-4" />
-                                  </button>
+
                                   <button
                                     className="text-red-400 hover:text-red-300"
                                     onClick={async () => {
@@ -791,7 +727,7 @@ function App() {
                                       if (!confirmed) return;
 
                                       const res = await fetch(
-                                        `http://localhost:4000/delete?key=${encodeURIComponent(file.hash)}`,
+                                        `http://localhost:4000/delete?key=${encodeURIComponent(file.s3Key)}`,
                                         { method: "DELETE" }
                                       );
 
@@ -806,6 +742,16 @@ function App() {
                                     <Trash2 className="w-4 h-4" />
                                   </button>
 
+                                  <button
+                                    className="text-purple-400 hover:text-purple-300"
+                                    onClick={() => {
+                                      const shareLink = `http://localhost:4000/download?key=${encodeURIComponent(file.s3Key)}`;
+                                      navigator.clipboard.writeText(shareLink);
+                                      addNotification("🔗 Link copied to clipboard!", "info");
+                                    }}
+                                  >
+                                    <Share2 className="w-4 h-4" />
+                                  </button>
                                 </div>
                               </td>
                             </tr>
@@ -932,19 +878,13 @@ function App() {
             {activeTab === 'stats' && (
               <>
                 {isAdmin ? (
-                  <AdminAnalytics
-                    userStats={mockUserStats}
-                    systemStats={mockSystemStats}
-                  />
+                  <AdminAnalytics />
                 ) : (
-                  <UserAnalytics
-                    userStats={mockUserPersonalStats}
-                    fileTypeDistribution={mockFileTypeDistribution}
-                    activityHistory={mockActivityHistory}
-                  />
+                  <UserAnalytics userEmail={user?.primaryEmailAddress?.emailAddress || ""} />
                 )}
               </>
             )}
+
 
             {/* Admin Panel */}
             {activeTab === 'admin' && isAdmin && (

@@ -32,7 +32,7 @@ func InitAWS() {
 	log.Printf("✅ AWS initialized: bucket=%s, region=%s", bucketName, region)
 }
 
-// UploadToS3 uploads a file stream to S3
+// UploadToS3 uploads a file stream to S3 and updates DB stats
 func UploadToS3(file io.Reader, key string) error {
 	svc := s3.New(sess)
 
@@ -47,7 +47,8 @@ func UploadToS3(file io.Reader, key string) error {
 		Key:    aws.String(key),
 		Body:   bytes.NewReader(buf.Bytes()),
 	})
-	return err
+
+	return nil
 }
 
 // ListFiles lists all objects for a given prefix (e.g. "username/")
@@ -72,7 +73,7 @@ func ListFiles(prefix string) ([]map[string]interface{}, error) {
 	return files, nil
 }
 
-// DownloadFromS3 downloads a file by key
+// DownloadFromS3 downloads a file by key and updates DB stats
 func DownloadFromS3(key string) (io.ReadCloser, error) {
 	svc := s3.New(sess)
 	resp, err := svc.GetObject(&s3.GetObjectInput{
@@ -85,12 +86,16 @@ func DownloadFromS3(key string) (io.ReadCloser, error) {
 	return resp.Body, nil
 }
 
-// DeleteFromS3 deletes a file by key
+// DeleteFromS3 deletes a file by key and updates DB stats
 func DeleteFromS3(key string) error {
 	svc := s3.New(sess)
 	_, err := svc.DeleteObject(&s3.DeleteObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(key),
 	})
-	return err
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -1,59 +1,79 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line
 } from 'recharts';
-import { 
-  Files, 
-  HardDrive, 
-  Download, 
-  Upload as UploadIcon,
-} from 'lucide-react';
+import { Files, HardDrive, Download, Upload as UploadIcon } from 'lucide-react';
+
+interface UserStats {
+  id: number;
+  email: string;
+  filesCount: number;
+  storageUsed: number;
+  lastActive: string;
+  uploadsThisMonth: number;
+  downloadsThisMonth: number;
+  deduplicationSavings: number;
+}
 
 interface UserAnalyticsProps {
-  userStats: {
-    totalFiles: number;
-    storageUsed: number;
-    uploadsThisMonth: number;
-    downloadsThisMonth: number;
-    deduplicationSavings: number;
-  };
-  fileTypeDistribution: Array<{
-    type: string;
-    count: number;
-    size: number;
-  }>;
-  activityHistory: Array<{
-    date: string;
-    uploads: number;
-    downloads: number;
-  }>;
+  userEmail: string;
 }
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
 
-export const UserAnalytics: React.FC<UserAnalyticsProps> = ({
-  userStats,
-  fileTypeDistribution,
-  activityHistory
-}) => {
+export const UserAnalytics: React.FC<UserAnalyticsProps> = ({ userEmail }) => {
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
   const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 B';
+    if (!bytes) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
+
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:4000/admin/user-stats?email=${encodeURIComponent(userEmail)}`
+        );
+        if (!res.ok) throw new Error("Failed to fetch user stats");
+        const data: UserStats = await res.json();
+        setUserStats(data);
+      } catch (err) {
+        console.error("❌ Error fetching user stats:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (userEmail) fetchUserStats();
+  }, [userEmail]);
+
+
+  if (loading) {
+    return <div className="text-gray-400">Loading your analytics...</div>;
+  }
+
+  if (!userStats) {
+    return <div className="text-gray-400">No stats available for {userEmail}</div>;
+  }
+
+  // Mocked for now — later you can fetch these too
+  const fileTypeDistribution = [
+    { type: 'Images', count: 10, size: 500 * 1024 * 1024 },
+    { type: 'Documents', count: 5, size: 300 * 1024 * 1024 },
+    { type: 'Videos', count: 2, size: 1200 * 1024 * 1024 },
+  ];
+
+  const activityHistory = [
+    { date: '2025-09-01', uploads: 3, downloads: 5 },
+    { date: '2025-09-02', uploads: 7, downloads: 2 },
+    { date: '2025-09-03', uploads: 2, downloads: 8 },
+  ];
 
   return (
     <div className="space-y-6">
@@ -63,7 +83,7 @@ export const UserAnalytics: React.FC<UserAnalyticsProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-400">My Files</p>
-              <p className="text-2xl font-bold text-white">{userStats.totalFiles}</p>
+              <p className="text-2xl font-bold text-white">{userStats.filesCount}</p>
             </div>
             <Files className="w-8 h-8 text-blue-500" />
           </div>
@@ -123,37 +143,17 @@ export const UserAnalytics: React.FC<UserAnalyticsProps> = ({
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip 
+              <Tooltip
                 contentStyle={{
                   backgroundColor: '#1F2937',
                   border: '1px solid #374151',
                   borderRadius: '8px',
                   color: '#F9FAFB'
                 }}
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                formatter={(value: number, name: string) => [value, 'Files']}
+                formatter={(value: number) => [value, 'Files']}
               />
             </PieChart>
           </ResponsiveContainer>
-          <div className="mt-4 space-y-2">
-            {fileTypeDistribution.map((entry, index) => (
-              <div key={entry.type} className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div 
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                  />
-                  <span className="text-sm text-gray-300">{entry.type}</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-sm font-medium text-white">{entry.count}</span>
-                  <span className="text-xs text-gray-400 ml-2">
-                    ({formatFileSize(entry.size)})
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Activity History */}
@@ -162,13 +162,9 @@ export const UserAnalytics: React.FC<UserAnalyticsProps> = ({
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={activityHistory}>
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis 
-                dataKey="date" 
-                stroke="#9CA3AF"
-                fontSize={12}
-              />
+              <XAxis dataKey="date" stroke="#9CA3AF" fontSize={12} />
               <YAxis stroke="#9CA3AF" fontSize={12} />
-              <Tooltip 
+              <Tooltip
                 contentStyle={{
                   backgroundColor: '#1F2937',
                   border: '1px solid #374151',
@@ -176,20 +172,8 @@ export const UserAnalytics: React.FC<UserAnalyticsProps> = ({
                   color: '#F9FAFB'
                 }}
               />
-              <Line 
-                type="monotone" 
-                dataKey="uploads" 
-                stroke="#10B981" 
-                strokeWidth={2}
-                dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="downloads" 
-                stroke="#3B82F6" 
-                strokeWidth={2}
-                dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
-              />
+              <Line type="monotone" dataKey="uploads" stroke="#10B981" strokeWidth={2} dot />
+              <Line type="monotone" dataKey="downloads" stroke="#3B82F6" strokeWidth={2} dot />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -201,17 +185,9 @@ export const UserAnalytics: React.FC<UserAnalyticsProps> = ({
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={fileTypeDistribution}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis 
-              dataKey="type" 
-              stroke="#9CA3AF"
-              fontSize={12}
-            />
-            <YAxis 
-              stroke="#9CA3AF"
-              fontSize={12}
-              tickFormatter={formatFileSize}
-            />
-            <Tooltip 
+            <XAxis dataKey="type" stroke="#9CA3AF" fontSize={12} />
+            <YAxis stroke="#9CA3AF" fontSize={12} tickFormatter={formatFileSize} />
+            <Tooltip
               contentStyle={{
                 backgroundColor: '#1F2937',
                 border: '1px solid #374151',
@@ -220,11 +196,7 @@ export const UserAnalytics: React.FC<UserAnalyticsProps> = ({
               }}
               formatter={(value: number) => [formatFileSize(value), 'Storage Used']}
             />
-            <Bar 
-              dataKey="size" 
-              fill="#3B82F6" 
-              radius={[4, 4, 0, 0]}
-            />
+            <Bar dataKey="size" fill="#3B82F6" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

@@ -139,7 +139,7 @@ export const UserAnalytics: React.FC<UserAnalyticsProps> = ({ userEmail }) => {
                 paddingAngle={5}
                 dataKey="count"
               >
-                {fileTypeDistribution.map((entry, index) => (
+                {fileTypeDistribution.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>

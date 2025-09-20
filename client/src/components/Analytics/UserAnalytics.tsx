@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line
-} from 'recharts';
-import { Files, HardDrive, Download, Upload as UploadIcon } from 'lucide-react';
+} from "recharts";
+import { Files, HardDrive, Download, Upload as UploadIcon } from "lucide-react";
 
 interface UserStats {
   id: number;
@@ -20,18 +20,18 @@ interface UserAnalyticsProps {
   userEmail: string;
 }
 
-const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
+const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4"];
 
 export const UserAnalytics: React.FC<UserAnalyticsProps> = ({ userEmail }) => {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   const formatFileSize = (bytes: number): string => {
-    if (!bytes) return '0 B';
+    if (!bytes) return "0 B";
     const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const sizes = ["B", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
   };
 
   useEffect(() => {
@@ -53,7 +53,6 @@ export const UserAnalytics: React.FC<UserAnalyticsProps> = ({ userEmail }) => {
     if (userEmail) fetchUserStats();
   }, [userEmail]);
 
-
   if (loading) {
     return <div className="text-gray-400">Loading your analytics...</div>;
   }
@@ -62,17 +61,18 @@ export const UserAnalytics: React.FC<UserAnalyticsProps> = ({ userEmail }) => {
     return <div className="text-gray-400">No stats available for {userEmail}</div>;
   }
 
-  // Mocked for now — later you can fetch these too
+  // TODO: Replace with real breakdown from backend later
   const fileTypeDistribution = [
-    { type: 'Images', count: 10, size: 500 * 1024 * 1024 },
-    { type: 'Documents', count: 5, size: 300 * 1024 * 1024 },
-    { type: 'Videos', count: 2, size: 1200 * 1024 * 1024 },
+    { type: "Images", count: 10, size: 500 * 1024 * 1024 },
+    { type: "Documents", count: 5, size: 300 * 1024 * 1024 },
+    { type: "Videos", count: 2, size: 1200 * 1024 * 1024 },
   ];
 
+  // TODO: Replace with real time series (uploads/downloads per day)
   const activityHistory = [
-    { date: '2025-09-01', uploads: 3, downloads: 5 },
-    { date: '2025-09-02', uploads: 7, downloads: 2 },
-    { date: '2025-09-03', uploads: 2, downloads: 8 },
+    { date: "2025-09-01", uploads: 3, downloads: 5 },
+    { date: "2025-09-02", uploads: 7, downloads: 2 },
+    { date: "2025-09-03", uploads: 2, downloads: 8 },
   ];
 
   return (
@@ -145,12 +145,12 @@ export const UserAnalytics: React.FC<UserAnalyticsProps> = ({ userEmail }) => {
               </Pie>
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#1F2937',
-                  border: '1px solid #374151',
-                  borderRadius: '8px',
-                  color: '#F9FAFB'
+                  backgroundColor: "#1F2937",
+                  border: "1px solid #374151",
+                  borderRadius: "8px",
+                  color: "#F9FAFB",
                 }}
-                formatter={(value: number) => [value, 'Files']}
+                formatter={(value: number) => [value, "Files"]}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -166,10 +166,10 @@ export const UserAnalytics: React.FC<UserAnalyticsProps> = ({ userEmail }) => {
               <YAxis stroke="#9CA3AF" fontSize={12} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#1F2937',
-                  border: '1px solid #374151',
-                  borderRadius: '8px',
-                  color: '#F9FAFB'
+                  backgroundColor: "#1F2937",
+                  border: "1px solid #374151",
+                  borderRadius: "8px",
+                  color: "#F9FAFB",
                 }}
               />
               <Line type="monotone" dataKey="uploads" stroke="#10B981" strokeWidth={2} dot />
@@ -189,12 +189,12 @@ export const UserAnalytics: React.FC<UserAnalyticsProps> = ({ userEmail }) => {
             <YAxis stroke="#9CA3AF" fontSize={12} tickFormatter={formatFileSize} />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#1F2937',
-                border: '1px solid #374151',
-                borderRadius: '8px',
-                color: '#F9FAFB'
+                backgroundColor: "#1F2937",
+                border: "1px solid #374151",
+                borderRadius: "8px",
+                color: "#F9FAFB",
               }}
-              formatter={(value: number) => [formatFileSize(value), 'Storage Used']}
+              formatter={(value: number) => [formatFileSize(value), "Storage Used"]}
             />
             <Bar dataKey="size" fill="#3B82F6" radius={[4, 4, 0, 0]} />
           </BarChart>

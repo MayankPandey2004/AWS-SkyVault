@@ -40,7 +40,9 @@ func main() {
 
 	// ✅ Admin analytics routes
 	r.HandleFunc("/admin/system-stats", handlers.GetSystemStats).Methods("GET")
-	r.HandleFunc("/admin/user-stats", handlers.GetUserStats).Methods("GET") // hardcoded for now
+	r.HandleFunc("/admin/user-stats", handlers.GetUserStats).Methods("GET") 
+	r.HandleFunc("/admin/file-details", handlers.GetUserFileDetails).Methods("GET")
+	// hardcoded for now
 
 	// CORS setup
 	cors := ghandlers.CORS(

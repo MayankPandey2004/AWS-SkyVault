@@ -122,27 +122,22 @@ function App() {
 
         // Map backend data to FileItem[]
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const loadedFiles: FileItem[] = data.map((f: any, idx: number) => {
-          const rawName = f.fileName || f.key.split("/").pop() || f.key;
-          const parts = rawName.split("-");
-          const cleanName = parts.length > 5 ? parts.slice(5).join("-") : rawName;
+        const loadedFiles: FileItem[] = data.map((f: any, idx: number) => ({
+          id: f.id || idx,
+          name: f.fileName,
+          size: f.size,
+          mimeType: f.mimeType || "application/octet-stream",
+          uploadDate: f.uploadDate,
+          uploader: username,
+          downloadCount: f.downloadCount || 0,
+          isPublic: false,
+          isDeduplicated: f.refCount > 1,  // ✅ backend refCount decides
+          hash: f.hash,
+          refCount: f.refCount || 1,
+          savings: f.refCount > 1 ? f.size : 0,
+          s3Key: f.s3Key,
+        }));
 
-          return {
-            id: f.id || idx,
-            name: cleanName,
-            size: f.size,
-            mimeType: f.mimeType || "application/octet-stream",
-            uploadDate: f.uploadDate || f.lastModified,
-            uploader: username,
-            downloadCount: f.downloadCount || 0,
-            isPublic: false,
-            isDeduplicated: f.deduped || false,
-            hash: f.hash,
-            refCount: f.refCount || 1,
-            savings: f.savings || 0,
-            s3Key: f.s3Key || f.key,   // ✅ store the actual S3 key
-          };
-        });
 
 
         setFiles(loadedFiles);
@@ -156,41 +151,20 @@ function App() {
   }, [user]);
 
 
-  // Mock deduplication logic
-  const calculateFileHash = (file: File): Promise<string> => {
-    return new Promise((resolve) => {
-      // Simulate hash calculation - in real implementation, use crypto.subtle.digest
-      const mockHash = btoa(file.name + file.size + file.lastModified).slice(0, 16);
-      setTimeout(() => resolve(mockHash), 100);
-    });
-  };
-
-  const findDuplicateFile = (hash: string): FileItem | undefined => {
-    return files.find(f => f.hash === hash);
-  };
-
   // Enhanced file upload with deduplication
   // inside App.tsx
   const handleFileUpload = useCallback(
     async (fileList: FileList) => {
-      if (!user) return; // ensure logged in
+      if (!user) return;
       setIsLoading(true);
-
-      const newFiles: FileItem[] = [];
 
       try {
         for (let i = 0; i < fileList.length; i++) {
           const file = fileList[i];
 
-          // 1. Send file + user metadata to Go backend (uploads to S3 + RDS)
           const formData = new FormData();
-          formData.append("file", file); // ✅ must send the file
-          formData.append("clerk_id", user.id); // Clerk user ID
-          formData.append("email", user.primaryEmailAddress?.emailAddress || "");
-          formData.append(
-            "username",
-            user.primaryEmailAddress?.emailAddress || user.id
-          ); // used for S3 prefix
+          formData.append("file", file);
+          formData.append("username", user.primaryEmailAddress?.emailAddress || user.id);
 
           const res = await fetch("http://localhost:4000/upload", {
             method: "POST",
@@ -199,84 +173,45 @@ function App() {
 
           if (!res.ok) {
             addNotification(`❌ Failed to upload ${file.name}`, "error");
-            throw new Error("Upload failed");
+            continue;
           }
 
           const data = await res.json();
 
-          // 2. Deduplication logic
-          const hash = await calculateFileHash(file);
-          const existingFile = findDuplicateFile(hash);
+          const uploadedFile: FileItem = {
+            id: Date.now() + i,
+            name: data.fileName,
+            size: data.size,
+            mimeType: data.mimeType,
+            uploadDate: new Date().toISOString(),
+            uploader: user.primaryEmailAddress?.emailAddress || "unknown",
+            downloadCount: 0,
+            isPublic: false,
+            isDeduplicated: data.duplicate || false, // ✅ from backend
+            hash: data.hash,
+            refCount: data.refCount || 1,
+            savings: data.duplicate ? data.size : 0,
+            s3Key: data.s3Key || data.key,
+          };
 
-          if (existingFile) {
-            // Duplicate file
-            const duplicateFile: FileItem = {
-              id: Date.now() + i,
-              name: file.name,
-              size: file.size,
-              mimeType: file.type,
-              uploadDate: new Date().toISOString(),
-              uploader: user.primaryEmailAddress?.emailAddress || "unknown",
-              downloadCount: 0,
-              isPublic: false,
-              isDeduplicated: true,
-              hash: hash,
-              refCount: existingFile.refCount + 1,
-              originalUploader: existingFile.uploader,
-              duplicateOf: existingFile.id,
-              savings: file.size,
-              s3Key: existingFile.s3Key,   // ✅ add this
-            };
+          setFiles((prev) => [...prev, uploadedFile]);
 
-
-            // update original file ref count
-            setFiles((prev) =>
-              prev.map((f) =>
-                f.id === existingFile.id ? { ...f, refCount: f.refCount + 1 } : f
-              )
-            );
-
-            newFiles.push(duplicateFile);
-            addNotification(`⚠️ Duplicate skipped: ${file.name}`, "info");
-          } else {
-            // Unique file
-            const uniqueFile: FileItem = {
-              id: Date.now() + i,
-              name: data.fileName,
-              size: data.size,
-              mimeType: data.mimeType,
-              uploadDate: new Date().toISOString(),
-              uploader: user.primaryEmailAddress?.emailAddress || "unknown",
-              downloadCount: 0,
-              isPublic: false,
-              isDeduplicated: false,
-              hash: hash,
-              refCount: 1,
-              savings: 0,
-              s3Key: data.key,   // ✅ from backend
-            };
-
-
-            newFiles.push(uniqueFile);
-            addNotification(`✅ Uploaded: ${file.name}`, "success");
-          }
+          addNotification(
+            uploadedFile.isDeduplicated
+              ? `⚠️ Duplicate skipped: ${file.name}`
+              : `✅ Uploaded: ${file.name}`,
+            uploadedFile.isDeduplicated ? "info" : "success"
+          );
         }
-
-        setFiles((prev) => [...prev, ...newFiles]);
       } catch (error) {
         console.error("Upload failed:", error);
-        addNotification(
-          "❌ An unexpected error occurred while uploading",
-          "error"
-        );
+        addNotification("❌ An unexpected error occurred while uploading", "error");
       }
 
       setIsLoading(false);
     },
-    [files, user]
+    [user]
   );
-
-
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B';

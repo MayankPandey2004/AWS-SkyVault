@@ -29,6 +29,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
       </div>
     )
   }
+  
 
   if (!isSignedIn) {
     return (

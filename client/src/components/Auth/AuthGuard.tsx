@@ -144,17 +144,17 @@ const AuthTabs: React.FC = () => {
         <SignIn
           appearance={{
             elements: {
-              card: "bg-transparent shadow-none !min-h-[320px] !p-2",
-              headerTitle: "text-white text-lg font-semibold",
-              headerSubtitle: "text-gray-400 text-sm",
+              card: "bg-transparent shadow-none",
+              headerTitle: "text-white text-xl font-semibold",
+              headerSubtitle: "text-gray-400",
               socialButtonsBlockButton:
-                "bg-slate-800 border border-slate-700 text-white hover:bg-slate-700 text-sm",
+                "bg-slate-800 border border-slate-700 text-white hover:bg-slate-700",
               formFieldInput:
-                "bg-slate-900 border border-slate-700 text-white placeholder:text-gray-500 focus:border-blue-500 text-sm",
+                "bg-slate-900 border border-slate-700 text-white placeholder:text-gray-500 focus:border-blue-500",
               formButtonPrimary:
-                "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-medium rounded-md text-sm",
-              footerActionLink: "text-blue-400 hover:text-blue-300 text-sm",
-              formFieldLabel: "text-gray-300 font-medium text-sm",
+                "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold rounded-lg",
+              footerActionLink: "text-blue-400 hover:text-blue-300",
+              formFieldLabel: "text-gray-300 font-medium",
             },
           }}
         />
@@ -162,17 +162,17 @@ const AuthTabs: React.FC = () => {
         <SignUp
           appearance={{
             elements: {
-              card: "bg-transparent shadow-none !min-h-[350px] !p-2",
-              headerTitle: "text-white text-lg font-semibold",
-              headerSubtitle: "text-gray-400 text-sm",
+              card: "bg-transparent shadow-none !p-4 !min-h-[400px]",
+              headerTitle: "text-white text-xl font-semibold",
+              headerSubtitle: "text-gray-400",
               socialButtonsBlockButton:
-                "bg-slate-800 border border-slate-700 text-white hover:bg-slate-700 text-sm",
+                "bg-slate-800 border border-slate-700 text-white hover:bg-slate-700",
               formFieldInput:
-                "bg-slate-900 border border-slate-700 text-white placeholder:text-gray-500 focus:border-blue-500 text-sm",
+                "bg-slate-900 border border-slate-700 text-white placeholder:text-gray-500 focus:border-blue-500",
               formButtonPrimary:
-                "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-medium rounded-md text-sm",
-              footerActionLink: "text-blue-400 hover:text-blue-300 text-sm",
-              formFieldLabel: "text-gray-300 font-medium text-sm",
+                "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold rounded-lg",
+              footerActionLink: "text-blue-400 hover:text-blue-300",
+              formFieldLabel: "text-gray-300 font-medium",
             },
           }}
         />

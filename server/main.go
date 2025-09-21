@@ -2,8 +2,6 @@ package main
 
 import (
 	"log"
-	"net/http"
-	"os"
 
 	"server/db"
 	"server/handlers"
@@ -12,6 +10,9 @@ import (
 	ghandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
+
+	"github.com/awslabs/aws-lambda-go-api-proxy/httpadapter"
+	"github.com/aws/aws-lambda-go/lambda"
 )
 
 func main() {
@@ -20,7 +21,7 @@ func main() {
 		log.Println("⚠️ No .env file found")
 	}
 
-	// ✅ Connect to Postgres (RDS)
+	// ✅ Connect to Postgres
 	if err := db.Connect(); err != nil {
 		log.Fatal("❌ Failed to connect to DB:", err)
 	}
@@ -40,22 +41,17 @@ func main() {
 
 	// ✅ Admin analytics routes
 	r.HandleFunc("/admin/system-stats", handlers.GetSystemStats).Methods("GET")
-	r.HandleFunc("/admin/user-stats", handlers.GetUserStats).Methods("GET") 
+	r.HandleFunc("/admin/user-stats", handlers.GetUserStats).Methods("GET")
 	r.HandleFunc("/admin/file-details", handlers.GetUserFileDetails).Methods("GET")
-	// hardcoded for now
 
 	// CORS setup
 	cors := ghandlers.CORS(
-		ghandlers.AllowedOrigins([]string{"http://localhost:5173"}),
-		ghandlers.AllowedMethods([]string{"GET", "POST", "DELETE"}),
-		ghandlers.AllowedHeaders([]string{"Content-Type"}),
+		ghandlers.AllowedOrigins([]string{"*"}),
+		ghandlers.AllowedMethods([]string{"GET", "POST", "DELETE", "OPTIONS"}),
+		ghandlers.AllowedHeaders([]string{"*"}),
 	)
 
-	// Start server
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "4000"
-	}
-	log.Println("🚀 Server running on port", port)
-	log.Fatal(http.ListenAndServe(":"+port, cors(r)))
+	// ✅ Wrap router in Lambda adapter (instead of ListenAndServe)
+	adapter := httpadapter.New(cors(r))
+	lambda.Start(adapter.ProxyWithContext)
 }

@@ -1,43 +1,18 @@
-# -------------------
-# 1. Build Stage
-# -------------------
-FROM golang:1.22-alpine AS builder
+# Stage 1: Builder
+FROM golang:1.24 AS builder
 
-# Install required packages
-RUN apk add --no-cache git
-
-# Set working directory
 WORKDIR /app
-
-# Copy go.mod and go.sum first (for better caching)
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the entire source code
 COPY . .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o main main.go
 
-# Build the Go binary
-RUN go build -o main .
+# Stage 2: Lambda runtime
+FROM public.ecr.aws/lambda/go:1
 
-# -------------------
-# 2. Runtime Stage
-# -------------------
-FROM alpine:latest
+# Copy the binary into the Lambda task root
+COPY --from=builder /app/main ${LAMBDA_TASK_ROOT}
 
-# Install certificates for HTTPS requests
-RUN apk add --no-cache ca-certificates
-
-WORKDIR /root/
-
-# Copy compiled binary from builder
-COPY --from=builder /app/main .
-
-# Copy .env if you want inside container (optional, can also use AWS secrets/vars)
-# COPY .env . 
-
-# Expose backend port
-EXPOSE 4000
-
-# Run the app
-CMD ["./main"]
-
+# Command to run the Lambda function
+CMD [ "main" ]

@@ -12,6 +12,8 @@ require (
 )
 
 require (
+	github.com/aws/aws-lambda-go v1.49.0 // indirect
+	github.com/awslabs/aws-lambda-go-api-proxy v0.16.2 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect

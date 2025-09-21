@@ -96,16 +96,17 @@ const LandingScreen = () => {
   )
 }
 
+/* --- AuthTabs --- */
 const AuthTabs: React.FC = () => {
   const [activeTab, setActiveTab] = React.useState<"signin" | "signup">("signin")
 
   return (
     <div>
       {/* Tabs */}
-      <div className="flex mb-6 bg-slate-800/80 rounded-lg p-1">
+      <div className="flex mb-3 bg-slate-800/80 rounded-md p-1">
         <button
           onClick={() => setActiveTab("signin")}
-          className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-all ${activeTab === "signin"
+          className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${activeTab === "signin"
               ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow"
               : "text-gray-400 hover:text-white hover:bg-slate-700/50"
             }`}
@@ -114,7 +115,7 @@ const AuthTabs: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab("signup")}
-          className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-all ${activeTab === "signup"
+          className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${activeTab === "signup"
               ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow"
               : "text-gray-400 hover:text-white hover:bg-slate-700/50"
             }`}
@@ -123,18 +124,18 @@ const AuthTabs: React.FC = () => {
         </button>
       </div>
 
-      {/* 🚀 Test Accounts Info */}
+      {/* Test Accounts Info - compact */}
       {activeTab === "signin" && (
-        <div className="mb-6 p-3 rounded-lg bg-slate-800/70 border border-slate-600 text-sm text-gray-300">
-          <p className="font-semibold text-white mb-2">Test Users</p>
-          <ul className="space-y-1">
-            <li>
-              <span className="text-blue-400">User:</span> testuser@user.com / <span className="text-cyan-400">SkyVault#123</span>
-            </li>
-            <li>
-              <span className="text-blue-400">Admin:</span> testuser@admin.com / <span className="text-cyan-400">SkyVault#123</span>
-            </li>
-          </ul>
+        <div className="mb-3 p-2 rounded-md bg-slate-800/60 border border-slate-600 text-xs text-gray-300">
+          <p className="font-semibold text-white mb-1">Test Users</p>
+          <p>
+            <span className="text-blue-400">User:</span> testuser@user.com /{" "}
+            <span className="text-cyan-400">SkyVault#123</span>
+          </p>
+          <p>
+            <span className="text-blue-400">Admin:</span> testuser@admin.com /{" "}
+            <span className="text-cyan-400">SkyVault#123</span>
+          </p>
         </div>
       )}
 
@@ -143,17 +144,17 @@ const AuthTabs: React.FC = () => {
         <SignIn
           appearance={{
             elements: {
-              card: "bg-transparent shadow-none",
-              headerTitle: "text-white text-xl font-semibold",
-              headerSubtitle: "text-gray-400",
+              card: "bg-transparent shadow-none !min-h-[320px] !p-2",
+              headerTitle: "text-white text-lg font-semibold",
+              headerSubtitle: "text-gray-400 text-sm",
               socialButtonsBlockButton:
-                "bg-slate-800 border border-slate-700 text-white hover:bg-slate-700",
+                "bg-slate-800 border border-slate-700 text-white hover:bg-slate-700 text-sm",
               formFieldInput:
-                "bg-slate-900 border border-slate-700 text-white placeholder:text-gray-500 focus:border-blue-500",
+                "bg-slate-900 border border-slate-700 text-white placeholder:text-gray-500 focus:border-blue-500 text-sm",
               formButtonPrimary:
-                "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold rounded-lg",
-              footerActionLink: "text-blue-400 hover:text-blue-300",
-              formFieldLabel: "text-gray-300 font-medium",
+                "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-medium rounded-md text-sm",
+              footerActionLink: "text-blue-400 hover:text-blue-300 text-sm",
+              formFieldLabel: "text-gray-300 font-medium text-sm",
             },
           }}
         />
@@ -161,17 +162,17 @@ const AuthTabs: React.FC = () => {
         <SignUp
           appearance={{
             elements: {
-              card: "bg-transparent shadow-none !p-4 !min-h-[400px]",
-              headerTitle: "text-white text-xl font-semibold",
-              headerSubtitle: "text-gray-400",
+              card: "bg-transparent shadow-none !min-h-[350px] !p-2",
+              headerTitle: "text-white text-lg font-semibold",
+              headerSubtitle: "text-gray-400 text-sm",
               socialButtonsBlockButton:
-                "bg-slate-800 border border-slate-700 text-white hover:bg-slate-700",
+                "bg-slate-800 border border-slate-700 text-white hover:bg-slate-700 text-sm",
               formFieldInput:
-                "bg-slate-900 border border-slate-700 text-white placeholder:text-gray-500 focus:border-blue-500",
+                "bg-slate-900 border border-slate-700 text-white placeholder:text-gray-500 focus:border-blue-500 text-sm",
               formButtonPrimary:
-                "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold rounded-lg",
-              footerActionLink: "text-blue-400 hover:text-blue-300",
-              formFieldLabel: "text-gray-300 font-medium",
+                "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-medium rounded-md text-sm",
+              footerActionLink: "text-blue-400 hover:text-blue-300 text-sm",
+              formFieldLabel: "text-gray-300 font-medium text-sm",
             },
           }}
         />

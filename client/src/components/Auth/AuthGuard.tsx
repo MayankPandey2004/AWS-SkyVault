@@ -85,7 +85,7 @@ const LandingScreen = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center 
       bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 text-center px-4">
-      
+
       <div className="animate-bounce mb-6">
         <Shield className="w-16 h-16 text-blue-400" />
       </div>
@@ -105,25 +105,38 @@ const AuthTabs: React.FC = () => {
       <div className="flex mb-6 bg-slate-800/80 rounded-lg p-1">
         <button
           onClick={() => setActiveTab("signin")}
-          className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-all ${
-            activeTab === "signin"
+          className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-all ${activeTab === "signin"
               ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow"
               : "text-gray-400 hover:text-white hover:bg-slate-700/50"
-          }`}
+            }`}
         >
           Sign In
         </button>
         <button
           onClick={() => setActiveTab("signup")}
-          className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-all ${
-            activeTab === "signup"
+          className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-all ${activeTab === "signup"
               ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow"
               : "text-gray-400 hover:text-white hover:bg-slate-700/50"
-          }`}
+            }`}
         >
           Sign Up
         </button>
       </div>
+
+      {/* 🚀 Test Accounts Info */}
+      {activeTab === "signin" && (
+        <div className="mb-6 p-3 rounded-lg bg-slate-800/70 border border-slate-600 text-sm text-gray-300">
+          <p className="font-semibold text-white mb-2">Test Users</p>
+          <ul className="space-y-1">
+            <li>
+              <span className="text-blue-400">User:</span> testuser@user.com / <span className="text-cyan-400">SkyVault#123</span>
+            </li>
+            <li>
+              <span className="text-blue-400">Admin:</span> testuser@admin.com / <span className="text-cyan-400">SkyVault#123</span>
+            </li>
+          </ul>
+        </div>
+      )}
 
       {/* Clerk Auth */}
       {activeTab === "signin" ? (
@@ -148,7 +161,7 @@ const AuthTabs: React.FC = () => {
         <SignUp
           appearance={{
             elements: {
-              card: "bg-transparent shadow-none !p-4 !min-h-[400px]", 
+              card: "bg-transparent shadow-none !p-4 !min-h-[400px]",
               headerTitle: "text-white text-xl font-semibold",
               headerSubtitle: "text-gray-400",
               socialButtonsBlockButton:
@@ -166,3 +179,4 @@ const AuthTabs: React.FC = () => {
     </div>
   )
 }
+

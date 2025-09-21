@@ -1,0 +1,46 @@
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Ignore the Go build output
+main
+bin/
+build/
+dist/
+
+# IDE/editor config files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Git files
+.git
+.gitignore
+
+# Dependency directories (if vendored)
+vendor/
+
+# Node modules (if frontend inside, or accidentally copied)
+node_modules/
+
+# Logs
+*.log
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Docker files (if not needed)
+Dockerfile*
+docker-compose*.yml
+
+# Others
+*_test.go

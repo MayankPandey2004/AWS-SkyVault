@@ -16,13 +16,11 @@ interface UserStats {
   deduplicationSavings: number;
 }
 
-interface UserAnalyticsProps {
-  userEmail: string;
-}
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4"];
 
-export const UserAnalytics: React.FC<UserAnalyticsProps> = ({ userEmail }) => {
+export const UserAnalytics: React.FC<{ userEmail: string }> = ({ userEmail }) => {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -38,7 +36,7 @@ export const UserAnalytics: React.FC<UserAnalyticsProps> = ({ userEmail }) => {
     const fetchUserStats = async () => {
       try {
         const res = await fetch(
-          `http://localhost:4000/admin/user-stats?email=${encodeURIComponent(userEmail)}`
+          `${BASE_URL}/admin/user-stats?email=${encodeURIComponent(userEmail)}`
         );
         if (!res.ok) throw new Error("Failed to fetch user stats");
         const data: UserStats = await res.json();

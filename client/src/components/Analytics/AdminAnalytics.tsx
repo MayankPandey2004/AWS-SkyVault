@@ -24,6 +24,8 @@ interface SystemStats {
   deduplicationSavings: number;
 }
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+
 const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#8B5CF6"];
 
 export const AdminAnalytics: React.FC = () => {
@@ -33,16 +35,17 @@ export const AdminAnalytics: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("http://localhost:4000/admin/system-stats");
+        const res = await fetch(`${BASE_URL}/admin/system-stats`);
         if (!res.ok) throw new Error("Failed to fetch system stats");
         const sysData = await res.json();
         setSystemStats(sysData);
       } catch (err) {
-        console.error("Failed to fetch admin analytics:", err);
+        console.error("❌ Failed to fetch admin analytics:", err);
       } finally {
         setLoading(false);
       }
     };
+
     fetchData();
   }, []);
 

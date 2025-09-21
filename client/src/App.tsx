@@ -52,6 +52,8 @@ interface DeduplicationStats {
   savingsPercentage: number;
 }
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+
 function App() {
   const { user } = useUser();
   const { isAdmin } = useUserRole();
@@ -112,7 +114,7 @@ function App() {
         const username = user.primaryEmailAddress?.emailAddress || user.id;
 
         const res = await fetch(
-          `http://localhost:4000/files?username=${encodeURIComponent(username)}`
+          `${BASE_URL}/files?username=${encodeURIComponent(username)}`
         );
         if (!res.ok) {
           throw new Error("Failed to fetch files");
@@ -166,7 +168,7 @@ function App() {
           formData.append("file", file);
           formData.append("username", user.primaryEmailAddress?.emailAddress || user.id);
 
-          const res = await fetch("http://localhost:4000/upload", {
+          const res = await fetch(`${BASE_URL}/upload`, {
             method: "POST",
             body: formData,
           });
@@ -647,7 +649,7 @@ function App() {
                                   <button
                                     className="text-green-400 hover:text-green-300"
                                     onClick={() => {
-                                      const url = `http://localhost:4000/download?key=${encodeURIComponent(file.s3Key)}`;
+                                      const url = `${BASE_URL}/download?key=${encodeURIComponent(file.s3Key)}`;
                                       window.open(url, "_blank");
                                       addNotification("✅ Started Download...", "success");
                                     }}
@@ -662,7 +664,7 @@ function App() {
                                       if (!confirmed) return;
 
                                       const res = await fetch(
-                                        `http://localhost:4000/delete?key=${encodeURIComponent(file.s3Key)}`,
+                                        `${BASE_URL}/delete?key=${encodeURIComponent(file.s3Key)}`,
                                         { method: "DELETE" }
                                       );
 
@@ -680,7 +682,7 @@ function App() {
                                   <button
                                     className="text-purple-400 hover:text-purple-300"
                                     onClick={() => {
-                                      const shareLink = `http://localhost:4000/download?key=${encodeURIComponent(file.s3Key)}`;
+                                      const shareLink = `${BASE_URL}/download?key=${encodeURIComponent(file.s3Key)}`;
                                       navigator.clipboard.writeText(shareLink);
                                       addNotification("🔗 Link copied to clipboard!", "info");
                                     }}

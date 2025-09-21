@@ -20,6 +20,8 @@ interface DeduplicationGroup {
   savedSpace: number;
 }
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+
 export const DeduplicationManager: React.FC<{ userEmail: string }> = ({ userEmail }) => {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,11 +29,11 @@ export const DeduplicationManager: React.FC<{ userEmail: string }> = ({ userEmai
   const [showConfirmDialog, setShowConfirmDialog] = useState<number | null>(null);
 
   // 🔹 Fetch files from backend
-  useEffect(() => {
+    useEffect(() => {
     const fetchFiles = async () => {
       try {
         const res = await fetch(
-          `http://localhost:4000/user/file-details?username=${encodeURIComponent(userEmail)}`
+          `${BASE_URL}/user/file-details?username=${encodeURIComponent(userEmail)}`
         );
         if (!res.ok) throw new Error("Failed to fetch files");
         const data: FileItem[] = await res.json();
@@ -88,8 +90,8 @@ export const DeduplicationManager: React.FC<{ userEmail: string }> = ({ userEmai
       return;
     }
     try {
-      await fetch(`http://localhost:4000/delete?key=${encodeURIComponent(file?.hash ?? '')}`, {
-        method: "DELETE"
+      await fetch(`${BASE_URL}/delete?key=${encodeURIComponent(file?.hash ?? "")}`, {
+        method: "DELETE",
       });
       setFiles(prev => prev.filter(f => f.id !== fileId));
     } catch (err) {
@@ -108,7 +110,7 @@ export const DeduplicationManager: React.FC<{ userEmail: string }> = ({ userEmai
     const file = files.find(f => f.id === fileId);
     if (!file) return;
     try {
-      const res = await fetch(`http://localhost:4000/download?key=${encodeURIComponent(file.hash)}`);
+      const res = await fetch(`${BASE_URL}/download?key=${encodeURIComponent(file.hash)}`);
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
